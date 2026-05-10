@@ -1,0 +1,5 @@
+backend/build/
+backend/target/
+.agents/
+skills-lock.json
+skills-lock.json
