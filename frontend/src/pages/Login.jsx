@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { Stethoscope } from 'lucide-react';
+import api from '../api/client';
 
 export default function Login() {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Patient');
@@ -11,10 +12,16 @@ export default function Login() {
   const [doctors, setDoctors] = useState([]);
   const navigate = useNavigate();
 
+  const toDoctorUsername = (doctorName) =>
+    doctorName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '.')
+      .replace(/^\.+|\.+$/g, '');
+
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/api/doctors');
+        const res = await api.get('/doctors');
         setDoctors(res.data);
         if (res.data.length > 0) {
           setDoctorId(res.data[0].id);
@@ -26,29 +33,43 @@ export default function Login() {
     fetchDoctors();
   }, []);
 
-  const handleLogin = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8080/api/login', {
-        username: role === 'Patient' ? username : doctors.find(d => d.id == doctorId)?.name,
-        password,
-        role,
-        doctorId: role === 'Doctor' ? doctorId : null
-      });
-
-      if (response.data.success) {
-        if (role === 'Patient') {
-          localStorage.setItem('username', username);
+      if (isRegistering) {
+        const response = await api.post('/auth/register', { username, password });
+        if (response.data.success) {
+          localStorage.setItem('token', response.data.token);
+          localStorage.setItem('username', response.data.username);
           navigate('/patient');
-        } else {
-          localStorage.setItem('username', doctors.find(d => d.id == doctorId)?.name);
-          localStorage.setItem('doctorId', response.data.doctorId);
-          navigate('/doctor');
+        }
+      } else {
+        const doctor = doctors.find(d => d.id == doctorId);
+        const requestUsername = role === 'Patient' ? username : toDoctorUsername(doctor?.name || '');
+        const response = await api.post('/auth/login', {
+          username: requestUsername,
+          password
+        });
+
+        if (response.data.success) {
+          localStorage.setItem('token', response.data.token);
+          if (role === 'Patient') {
+            localStorage.setItem('username', requestUsername);
+            navigate('/patient');
+          } else {
+            localStorage.setItem('username', doctor?.name || '');
+            localStorage.setItem('doctorId', doctorId);
+            navigate('/doctor');
+          }
         }
       }
     } catch (error) {
-      console.error('Login failed', error);
-      alert('Login failed. Please make sure the backend is running.');
+      console.error('Request failed', error);
+      if (error.response && error.response.status === 409) {
+        alert('Username already exists. Please choose another one.');
+      } else {
+        alert(isRegistering ? 'Registration failed.' : 'Login failed. Please check credentials.');
+      }
     }
   };
 
@@ -58,23 +79,25 @@ export default function Login() {
         <div className="flex flex-col items-center mb-8">
           <img src="/logo.png" alt="ChronoMed Logo" className="h-32 -mt-4 -mb-4 object-contain scale-125" />
           <h1 className="text-3xl font-bold text-blue-800 tracking-tight">ChronoMed</h1>
-          <p className="text-gray-500 mt-2">Sign in to your account</p>
+          <p className="text-gray-500 mt-2">{isRegistering ? 'Create a Patient Account' : 'Sign in to your account'}</p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-            <select 
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all bg-white"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-            >
-              <option value="Patient">Patient</option>
-              <option value="Doctor">Doctor</option>
-            </select>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {!isRegistering && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <select 
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-brand-blue focus:border-brand-blue outline-none transition-all bg-white"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+              >
+                <option value="Patient">Patient</option>
+                <option value="Doctor">Doctor</option>
+              </select>
+            </div>
+          )}
 
-          {role === 'Patient' ? (
+          {isRegistering || role === 'Patient' ? (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input 
@@ -118,9 +141,22 @@ export default function Login() {
             type="submit" 
             className="w-full bg-brand-blue text-white py-3 rounded-xl font-semibold text-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
           >
-            Login
+            {isRegistering ? 'Register' : 'Login'}
           </button>
         </form>
+
+        <div className="mt-6 text-center">
+          <button 
+            type="button"
+            onClick={() => {
+              setIsRegistering(!isRegistering);
+              setRole('Patient'); // Reset to patient for registration
+            }}
+            className="text-brand-blue hover:text-blue-800 font-medium transition-colors"
+          >
+            {isRegistering ? 'Already have an account? Sign in' : 'Need an account? Register as Patient'}
+          </button>
+        </div>
       </div>
     </div>
   );

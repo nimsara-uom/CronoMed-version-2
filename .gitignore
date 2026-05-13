@@ -1,5 +1,6 @@
 backend/build/
 backend/target/
+backend/.gradle/
 .agents/
 skills-lock.json
 skills-lock.json

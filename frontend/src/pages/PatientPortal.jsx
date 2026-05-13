@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Activity, FileText, Calendar, Clock, Stethoscope, Search, User } from 'lucide-react';
+import api from '../api/client';
 
 export default function PatientPortal() {
   const [doctors, setDoctors] = useState([]);
@@ -21,7 +21,7 @@ export default function PatientPortal() {
     // Fetch doctors
     const fetchDoctors = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/api/doctors');
+        const res = await api.get('/doctors');
         setDoctors(res.data);
       } catch (error) {
         console.error("Error fetching doctors", error);
@@ -35,7 +35,7 @@ export default function PatientPortal() {
     if (!selectedDoctor || !patientName) return alert("Please select a doctor and ensure patient name is filled");
     
     try {
-      const res = await axios.post('http://localhost:8080/api/book', {
+      const res = await api.post('/book', {
         doctorId: selectedDoctor,
         patientName: patientName
       });
@@ -50,7 +50,7 @@ export default function PatientPortal() {
   const pollQueue = async () => {
     if (!selectedDoctor) return alert("Please select a doctor from the booking form to see their live queue.");
     try {
-      const res = await axios.get(`http://localhost:8080/api/queue?doctorId=${selectedDoctor}`);
+      const res = await api.get('/queue', { params: { doctorId: selectedDoctor } });
       setLiveQueue(res.data);
       setShowQueue(true);
     } catch (error) {

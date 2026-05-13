@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Users, CheckCircle, Clock, Stethoscope, LogOut } from 'lucide-react';
+import api from '../api/client';
 
 export default function DoctorDashboard() {
   const [queue, setQueue] = useState([]);
@@ -25,7 +25,7 @@ export default function DoctorDashboard() {
 
   const fetchQueue = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:8080/api/queue?doctorId=${id}`);
+      const res = await api.get('/queue', { params: { doctorId: id } });
       setQueue(res.data);
     } catch (error) {
       console.error("Error fetching queue", error);
@@ -34,7 +34,7 @@ export default function DoctorDashboard() {
 
   const handleCallNext = async (appointmentId) => {
     try {
-      await axios.put(`http://localhost:8080/api/start/${appointmentId}`);
+      await api.put(`/start/${appointmentId}`);
       fetchQueue(doctorId);
     } catch (error) {
       console.error("Error calling next patient", error);

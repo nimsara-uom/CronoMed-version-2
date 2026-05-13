@@ -25,16 +25,11 @@ public class QueueController {
 
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
+        // Deprecated: login moved to /api/auth/login
         LoginResponse response = new LoginResponse();
-        response.setSuccess(true);
-        response.setRole(request.getRole());
-        response.setUsername(request.getUsername());
-        
-        // Mock doctor login
-        if ("Doctor".equalsIgnoreCase(request.getRole())) {
-            response.setDoctorId(request.getDoctorId()); 
-        }
-        
+        response.setSuccess(false);
+        response.setUsername(null);
+        response.setRole(null);
         return response;
     }
 
