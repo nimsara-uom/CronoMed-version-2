@@ -3,6 +3,8 @@ package com.smartcare.backend.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
+
+
 @Entity
 public class Appointment {
     @Id
@@ -13,15 +15,24 @@ public class Appointment {
     
     @Enumerated(EnumType.STRING)
     private AppointmentStatus status;
+
+
+
     
     @ManyToOne
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
+
     
     private String patientName;
+
+
     
     private LocalDate date;
 
+
+
+    
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public Integer getQueueNumber() { return queueNumber; }
