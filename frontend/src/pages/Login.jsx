@@ -45,6 +45,12 @@ export default function Login() {
         }
       } else {
         const doctor = doctors.find(d => d.id == doctorId);
+        
+        if (role === 'Doctor' && !doctor) {
+          alert('Please wait for doctors to load or select a valid doctor.');
+          return;
+        }
+        
         const requestUsername = role === 'Patient' ? username : toDoctorUsername(doctor?.name || '');
         const response = await api.post('/auth/login', {
           username: requestUsername,

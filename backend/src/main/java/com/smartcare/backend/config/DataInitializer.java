@@ -24,6 +24,7 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner seedUsers(UserRepository userRepository, DoctorRepository doctorRepository, PasswordEncoder passwordEncoder) {
         return args -> {
+            // Seed doctor accounts from the doctor table
             if (userRepository.findByUsername("doctor.anil.fernando").isEmpty()) {
                 List<Doctor> doctors = doctorRepository.findAll();
                 for (Doctor doctor : doctors) {
@@ -34,18 +35,33 @@ public class DataInitializer {
                         continue;
                     }
                     if (userRepository.findByUsername(username).isEmpty()) {
-                        userRepository.save(createDoctor(username, "password123", passwordEncoder));
+                        userRepository.save(createUser(username, "password123", Role.DOCTOR, passwordEncoder));
                     }
+                }
+            }
+
+            // Seed patient accounts
+            String[][] patients = {
+                {"kenul",    "kenul_1234"},
+                {"nimsara",  "nimsara_1234"},
+                {"chamitha", "chamitha_1234"},
+                {"risandu",  "risandu_1234"},
+                {"kethmika", "kethmika_1234"}
+            };
+            for (String[] patient : patients) {
+                if (userRepository.findByUsername(patient[0]).isEmpty()) {
+                    userRepository.save(createUser(patient[0], patient[1], Role.PATIENT, passwordEncoder));
+                    System.out.println("Seeded patient: " + patient[0]);
                 }
             }
         };
     }
 
-    private User createDoctor(String username, String rawPassword, PasswordEncoder encoder) {
+    private User createUser(String username, String rawPassword, Role role, PasswordEncoder encoder) {
         User u = new User();
         u.setUsername(username);
         u.setPasswordHash(encoder.encode(rawPassword));
-        u.setRole(Role.DOCTOR);
+        u.setRole(role);
         return u;
     }
 }

@@ -1,9 +1,10 @@
 package com.smartcare.backend.dto;
 
-import lombok.Data;
-
+import jakarta.validation.constraints.NotBlank;
 public class LoginRequest {
+    @NotBlank
     private String username;
+    @NotBlank
     private String password;
     private String role; // "Patient" or "Doctor"
     private Long doctorId;

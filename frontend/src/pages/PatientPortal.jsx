@@ -37,7 +37,8 @@ export default function PatientPortal() {
     try {
       const res = await api.post('/book', {
         doctorId: selectedDoctor,
-        patientName: patientName
+        patientName: patientName,
+        date: date
       });
       alert(`Appointment Booked! Your Queue Number is ${res.data.queueNumber}`);
       setSelectedDoctor('');
@@ -105,7 +106,9 @@ export default function PatientPortal() {
                   required
                 >
                   <option value="">Search Doctor...</option>
-                  {doctors.map(d => (
+                  {doctors
+                    .filter(d => specialization === 'Any' || d.speciality === specialization)
+                    .map(d => (
                     <option key={d.id} value={d.id}>{d.name} ({d.speciality})</option>
                   ))}
                 </select>
@@ -116,7 +119,17 @@ export default function PatientPortal() {
                 <select 
                   className="w-full bg-transparent py-4 outline-none text-gray-700"
                   value={specialization}
-                  onChange={(e) => setSpecialization(e.target.value)}
+                  onChange={(e) => {
+                    const newSpec = e.target.value;
+                    setSpecialization(newSpec);
+                    // Reset doctor selection if the selected doctor is not in the new category
+                    if (newSpec !== 'Any') {
+                      const selectedDoc = doctors.find(d => d.id == selectedDoctor);
+                      if (selectedDoc && selectedDoc.speciality !== newSpec) {
+                        setSelectedDoctor('');
+                      }
+                    }
+                  }}
                 >
                   <option value="Any">Any Speciality</option>
                   {[...new Set(doctors.map(d => d.speciality))].filter(Boolean).map(spec => (

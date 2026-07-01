@@ -35,7 +35,7 @@ export default function DoctorDashboard() {
   const handleCallNext = async (appointmentId) => {
     try {
       await api.put(`/start/${appointmentId}`);
-      fetchQueue(doctorId);
+      fetchQueue(doctorId || localStorage.getItem('doctorId'));
     } catch (error) {
       console.error("Error calling next patient", error);
     }

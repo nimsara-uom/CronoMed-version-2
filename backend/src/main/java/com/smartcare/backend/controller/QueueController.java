@@ -1,19 +1,18 @@
 package com.smartcare.backend.controller;
 
 import com.smartcare.backend.dto.BookRequest;
-import com.smartcare.backend.dto.LoginRequest;
-import com.smartcare.backend.dto.LoginResponse;
 import com.smartcare.backend.model.Appointment;
 import com.smartcare.backend.model.Doctor;
 import com.smartcare.backend.repository.DoctorRepository;
 import com.smartcare.backend.service.QueueService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:5173")
 @RequestMapping("/api")
 public class QueueController {
 
@@ -23,15 +22,7 @@ public class QueueController {
     @Autowired
     private DoctorRepository doctorRepository;
 
-    @PostMapping("/login")
-    public LoginResponse login(@RequestBody LoginRequest request) {
-        // Deprecated: login moved to /api/auth/login
-        LoginResponse response = new LoginResponse();
-        response.setSuccess(false);
-        response.setUsername(null);
-        response.setRole(null);
-        return response;
-    }
+
 
     @GetMapping("/doctors")
     public List<Doctor> getDoctors() {
@@ -39,8 +30,8 @@ public class QueueController {
     }
 
     @PostMapping("/book")
-    public Appointment bookAppointment(@RequestBody BookRequest request) {
-        return queueService.bookAppointment(request.getDoctorId(), request.getPatientName());
+    public Appointment bookAppointment(@Valid @RequestBody BookRequest request) {
+        return queueService.bookAppointment(request.getDoctorId(), request.getPatientName(), request.getDate());
     }
 
     @GetMapping("/queue")
@@ -48,6 +39,7 @@ public class QueueController {
         return queueService.getQueueForDoctor(doctorId);
     }
 
+    @PreAuthorize("hasRole('DOCTOR')")
     @PutMapping("/start/{id}")
     public Appointment startAppointment(@PathVariable Long id) {
         return queueService.startAppointment(id);

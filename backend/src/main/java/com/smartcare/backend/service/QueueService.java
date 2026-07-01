@@ -22,19 +22,18 @@ public class QueueService {
     @Autowired
     private DoctorRepository doctorRepository;
 
-    public synchronized Appointment bookAppointment(Long doctorId, String patientName) {
+    public synchronized Appointment bookAppointment(Long doctorId, String patientName, LocalDate date) {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        LocalDate today = LocalDate.now();
-        Integer currentCount = appointmentRepository.countByDoctorAndDate(doctor, today);
+        Integer currentCount = appointmentRepository.countByDoctorAndDate(doctor, date);
         Integer nextQueueNumber = currentCount + 1;
 
         Appointment appointment = new Appointment();
         appointment.setDoctor(doctor);
         appointment.setPatientName(patientName);
         appointment.setQueueNumber(nextQueueNumber);
-        appointment.setDate(today);
+        appointment.setDate(date);
         appointment.setStatus(AppointmentStatus.PENDING);
 
         return appointmentRepository.save(appointment);
@@ -43,7 +42,7 @@ public class QueueService {
     public List<Appointment> getQueueForDoctor(Long doctorId) {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
-        return appointmentRepository.findByDoctorOrderByQueueNumberAsc(doctor);
+        return appointmentRepository.findByDoctorAndDateOrderByQueueNumberAsc(doctor, LocalDate.now());
     }
 
     @Transactional
