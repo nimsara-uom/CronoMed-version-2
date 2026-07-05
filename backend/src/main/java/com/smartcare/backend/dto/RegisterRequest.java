@@ -1,11 +1,13 @@
 package com.smartcare.backend.dto;
 
+import com.smartcare.backend.validation.ValidPassword;
 import jakarta.validation.constraints.NotBlank;
 
 public class RegisterRequest {
     @NotBlank
     private String username;
     @NotBlank
+    @ValidPassword
     private String password;
 
     public String getUsername() {

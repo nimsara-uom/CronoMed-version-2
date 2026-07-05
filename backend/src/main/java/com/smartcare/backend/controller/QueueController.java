@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,9 +30,13 @@ public class QueueController {
         return doctorRepository.findAll();
     }
 
+    /**
+     * #1 — Auth fix: ignore any patientName from the request body.
+     * The authenticated username (from JWT via Principal) is used as the source of truth.
+     */
     @PostMapping("/book")
-    public Appointment bookAppointment(@Valid @RequestBody BookRequest request) {
-        return queueService.bookAppointment(request.getDoctorId(), request.getPatientName(), request.getDate());
+    public Appointment bookAppointment(@Valid @RequestBody BookRequest request, Principal principal) {
+        return queueService.bookAppointment(request.getDoctorId(), principal.getName(), request.getDate());
     }
 
     @GetMapping("/queue")
@@ -41,9 +46,14 @@ public class QueueController {
         return queueService.getQueueForDoctor(doctorId, date);
     }
 
+    /**
+     * #1 — Auth fix: ignore any patientName query param.
+     * History is always scoped to the authenticated user. Doctors can query anyone's history
+     * via a separate admin endpoint if needed in the future.
+     */
     @GetMapping("/history")
-    public List<Appointment> getHistory(@RequestParam String patientName) {
-        return queueService.getPatientHistory(patientName);
+    public List<Appointment> getHistory(Principal principal) {
+        return queueService.getPatientHistory(principal.getName());
     }
 
     @PreAuthorize("hasRole('DOCTOR')")
@@ -53,8 +63,20 @@ public class QueueController {
     }
 
     @PreAuthorize("hasRole('DOCTOR')")
+    @PutMapping("/complete/{id}")
+    public Appointment completeAppointment(@PathVariable Long id) {
+        return queueService.completeAppointment(id);
+    }
+
+    /**
+     * #8 — Accept an optional date param so doctors managing a future date's queue
+     * can advance it correctly. Defaults to today if omitted.
+     */
+    @PreAuthorize("hasRole('DOCTOR')")
     @PutMapping("/next")
-    public Appointment callNext(@RequestParam Long doctorId) {
-        return queueService.callNextPatient(doctorId);
+    public Appointment callNext(
+            @RequestParam Long doctorId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return queueService.callNextPatient(doctorId, date);
     }
 }

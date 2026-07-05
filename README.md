@@ -2,7 +2,7 @@
 
 ChronoMed is a full-stack, concurrent-safe hospital queue management app built with React and Spring Boot. It provides a real-time Patient Portal for booking appointments and a live Doctor Dashboard for queue management.
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 - **React.js** (Vite)
@@ -17,14 +17,14 @@ ChronoMed is a full-stack, concurrent-safe hospital queue management app built w
 - **PostgreSQL (Supabase)**
 - **Spring Security + JWT**
 
-## ✨ Key Features
+## Key Features
 - **Concurrent-Safe Booking:** Thread-safe booking to prevent race conditions during simultaneous requests.
 - **Dynamic Live Queue:** Patients can see their live position in the queue.
 - **Doctor Dashboard:** Doctors can view patient load, consult patients, and mark appointments as completed.
 - **JWT Auth + Patient Registration:** Secure login and self-service patient account creation.
 
 
-## 🛠️ How to Run Locally
+## How to Run Locally
 
 You will need two separate terminal windows to run both the frontend and the backend.
 
@@ -58,13 +58,13 @@ npm run dev
 Once both servers are running, open your browser and navigate to:
 **http://localhost:5173/**
 
-## 👤 How to Use
+## How to Use
 
 - **Patient Registration:** Use "Register as Patient" on the login page and sign up with a username/password.
 - **Patient Login:** Use your registered username/password.
 - **Doctor Login:** Select "Doctor" and use `password123` (seeded doctors).
 
-## 🗄️ Doctor Seed Data
+## Doctor Seed Data
 
 Doctor accounts are seeded at startup in:
 `backend/src/main/java/com/smartcare/backend/config/DataInitializer.java`

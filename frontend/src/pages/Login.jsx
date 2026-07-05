@@ -9,6 +9,8 @@ export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [pwdValid, setPwdValid] = useState(true);
+  const [pwdMessage, setPwdMessage] = useState('');
   const [role, setRole] = useState('Patient');
   const [doctorId, setDoctorId] = useState('');
   const [doctors, setDoctors] = useState([]);
@@ -39,6 +41,13 @@ export default function Login() {
     e.preventDefault();
     try {
       if (isRegistering) {
+        // client-side password validation
+        const check = validatePassword(password);
+        if (!check.valid) {
+          setPwdValid(false);
+          setPwdMessage(check.message);
+          return;
+        }
         const response = await api.post('/auth/register', { username, password });
         if (response.data.success) {
           localStorage.setItem('token', response.data.token);
@@ -80,6 +89,25 @@ export default function Login() {
       }
     }
   };
+
+  const validatePassword = (password) => {
+    if (!password) return { valid: false, message: 'Password must not be empty' };
+    if (password.length < 8) return { valid: false, message: 'Password must be at least 8 characters long' };
+    let hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+    for (const c of password) {
+      if (c >= 'A' && c <= 'Z') hasUpper = true;
+      else if (c >= 'a' && c <= 'z') hasLower = true;
+      else if (c >= '0' && c <= '9') hasDigit = true;
+      else hasSpecial = true;
+    }
+    if (!hasUpper) return { valid: false, message: 'Add at least one uppercase letter' };
+    if (!hasLower) return { valid: false, message: 'Add at least one lowercase letter' };
+    if (!hasDigit) return { valid: false, message: 'Add at least one digit' };
+    if (!hasSpecial) return { valid: false, message: 'Add at least one special character' };
+    const lower = password.toLowerCase();
+    if (/(password|123456|qwerty)/.test(lower)) return { valid: false, message: 'Password is too common' };
+    return { valid: true, message: '' };
+  }
 
   return (
     <div
@@ -188,7 +216,17 @@ export default function Login() {
                 className="w-full bg-transparent py-3 outline-none"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (isRegistering) {
+                    const res = validatePassword(e.target.value);
+                    setPwdValid(res.valid);
+                    setPwdMessage(res.message);
+                  } else {
+                    setPwdValid(true);
+                    setPwdMessage('');
+                  }
+                }}
               />
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-gray-400 hover:text-emerald-600">
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -198,10 +236,14 @@ export default function Login() {
 
           <button
             type="submit"
+            disabled={isRegistering && !pwdValid}
             className="w-full bg-gradient-to-r from-emerald-500 to-brand-blue text-white py-3 rounded-xl font-semibold text-lg hover:from-emerald-600 hover:to-emerald-800 transition-all shadow-md hover:shadow-xl active:scale-[0.98]"
           >
             {isRegistering ? 'Register' : 'Sign In'}
           </button>
+          {isRegistering && !pwdValid && (
+            <p className="text-sm text-red-600 mt-2">{pwdMessage}</p>
+          )}
         </form>
 
         <div className="mt-6 flex items-center gap-3">

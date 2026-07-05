@@ -1,0 +1,11 @@
+package com.smartcare.backend.exception;
+
+/**
+ * Thrown when a requested resource (Doctor, Appointment, etc.) does not exist.
+ * Mapped to HTTP 404 by GlobalExceptionHandler.
+ */
+public class NotFoundException extends RuntimeException {
+    public NotFoundException(String message) {
+        super(message);
+    }
+}

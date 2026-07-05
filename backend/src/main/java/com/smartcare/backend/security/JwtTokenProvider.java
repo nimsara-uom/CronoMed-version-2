@@ -26,18 +26,19 @@ public class JwtTokenProvider {
 
     @PostConstruct
     protected void init() {
+        // #2 — Fail fast: if JWT_SECRET is absent or too short for HS256 (< 256 bits / 32 bytes),
+        // the WeakKeyException propagates and prevents the application from starting.
+        // This catches misconfiguration early rather than silently using a random key
+        // (which would invalidate all tokens on every restart without warning).
         byte[] keyBytes;
         try {
-            try {
-                keyBytes = Decoders.BASE64.decode(secret);
-            } catch (Exception ex) {
-                keyBytes = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
-            }
-            this.key = Keys.hmacShaKeyFor(keyBytes);
-        } catch (io.jsonwebtoken.security.WeakKeyException wk) {
-            // Fallback: generate a secure random key for development if provided secret is too weak
-            this.key = io.jsonwebtoken.security.Keys.secretKeyFor(io.jsonwebtoken.SignatureAlgorithm.HS256);
+            keyBytes = Decoders.BASE64.decode(secret);
+        } catch (Exception ex) {
+            // Not Base64 — treat as raw UTF-8 string (common in dev via env var)
+            keyBytes = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8);
         }
+        // Throws WeakKeyException if keyBytes < 32 bytes — intentionally not caught
+        this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String generateToken(String username, Role role) {

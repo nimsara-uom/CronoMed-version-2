@@ -11,9 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-
 import java.util.List;
-
 
 @Configuration
 public class DataInitializer {
@@ -24,8 +22,10 @@ public class DataInitializer {
     }
 
     @Bean
-    public CommandLineRunner seedUsers(UserRepository userRepository, DoctorRepository doctorRepository, PasswordEncoder passwordEncoder) {
+    public CommandLineRunner seedUsers(UserRepository userRepository, DoctorRepository doctorRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
+
             // Seed doctor accounts from the doctor table
             if (userRepository.findByUsername("doctor.anil.fernando").isEmpty()) {
                 List<Doctor> doctors = doctorRepository.findAll();
@@ -34,21 +34,29 @@ public class DataInitializer {
                             .replaceAll("[^a-z0-9]+", ".")
                             .replaceAll("^\\.+|\\.+$", "");
                     if (username.isBlank()) {
+                        System.out.println("Skipping doctor id=" + doctor.getId() + ": name produces empty slug");
                         continue;
+                    }
+                    // #6 — On slug collision, append the doctor's ID instead of silently skipping
+                    if (userRepository.findByUsername(username).isPresent()) {
+                        String fallback = username + "." + doctor.getId();
+                        System.out.println("Username collision: '" + username + "' already exists. Using '" + fallback + "' for doctor id=" + doctor.getId());
+                        username = fallback;
                     }
                     if (userRepository.findByUsername(username).isEmpty()) {
                         userRepository.save(createUser(username, "password123", Role.DOCTOR, passwordEncoder));
+                        System.out.println("Seeded doctor: " + username);
                     }
                 }
             }
 
             // Seed patient accounts
             String[][] patients = {
-                {"kenul",    "kenul_1234"},
-                {"nimsara",  "nimsara_1234"},
-                {"chamitha", "chamitha_1234"},
-                {"risandu",  "risandu_1234"},
-                {"kethmika", "kethmika_1234"}
+                    { "kenul", "kenul_1234" },
+                    { "nimsara", "nimsara_1234" },
+                    { "chamitha", "chamitha_1234" },
+                    { "risandu", "risandu_1234" },
+                    { "kethmika", "kethmika_1234" }
             };
             for (String[] patient : patients) {
                 if (userRepository.findByUsername(patient[0]).isEmpty()) {
