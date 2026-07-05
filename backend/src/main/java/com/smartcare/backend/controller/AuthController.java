@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -54,6 +55,13 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
+        String pwdError = validatePassword(request.getPassword());
+        if (pwdError != null) {
+            RegisterResponse resp = new RegisterResponse();
+            resp.setSuccess(false);
+            resp.setMessage(pwdError);
+            return ResponseEntity.badRequest().body(resp);
+        }
         if (userRepository.existsByUsername(request.getUsername())) {
             RegisterResponse resp = new RegisterResponse();
             resp.setSuccess(false);
@@ -76,5 +84,28 @@ public class AuthController {
         resp.setToken(token);
         resp.setMessage("Registration successful");
         return ResponseEntity.ok(resp);
+    }
+
+    // Returns null when password is strong, otherwise returns an error message
+    private String validatePassword(String password) {
+        if (password == null) return "Password must not be empty";
+        if (password.length() < 8) return "Password must be at least 8 characters long";
+        boolean hasUpper = false, hasLower = false, hasDigit = false, hasSpecial = false;
+        for (char c : password.toCharArray()) {
+            if (Character.isUpperCase(c)) hasUpper = true;
+            else if (Character.isLowerCase(c)) hasLower = true;
+            else if (Character.isDigit(c)) hasDigit = true;
+            else hasSpecial = true;
+        }
+        if (!hasUpper) return "Password must contain at least one uppercase letter";
+        if (!hasLower) return "Password must contain at least one lowercase letter";
+        if (!hasDigit) return "Password must contain at least one digit";
+        if (!hasSpecial) return "Password must contain at least one special character";
+        // optional: disallow common patterns
+        String lower = password.toLowerCase();
+        if (Pattern.compile("(password|123456|qwerty)").matcher(lower).find()) {
+            return "Password is too common";
+        }
+        return null;
     }
 }
