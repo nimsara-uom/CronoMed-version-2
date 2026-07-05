@@ -51,6 +51,16 @@ export default function DoctorDashboard() {
     }
   };
 
+  // Fix: explicit complete — lets doctor finish the last patient without needing to call a next one
+  const handleComplete = async (appointmentId) => {
+    try {
+      await api.put(`/complete/${appointmentId}`);
+      fetchQueue(doctorId || localStorage.getItem('doctorId'));
+    } catch (error) {
+      console.error("Error completing appointment", error);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/';
@@ -131,7 +141,7 @@ export default function DoctorDashboard() {
 
         {/* Current Patient Banner */}
         {inProgress && (
-          <div className="bg-gradient-to-r from-brand-blue to-emerald-700 rounded-2xl shadow-lg p-6 mb-8 flex justify-between items-center text-white">
+          <div className="bg-gradient-to-r from-brand-blue to-emerald-700 rounded-2xl shadow-lg p-6 mb-8 flex flex-wrap justify-between items-center gap-4 text-white">
             <div>
               <p className="text-emerald-200 font-medium mb-1">Currently Consulting</p>
               <div className="flex items-center gap-4">
@@ -139,14 +149,23 @@ export default function DoctorDashboard() {
                 <span className="text-2xl">{inProgress.patientName}</span>
               </div>
             </div>
-            {pendingPatients.length > 0 && (
-              <button 
-                onClick={handleAutoNext}
-                className="bg-white text-brand-blue px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-xl transition-all active:scale-95"
+            <div className="flex items-center gap-3 flex-wrap">
+              {/* Fix: Complete button lets doctor finish the current patient explicitly */}
+              <button
+                onClick={() => handleComplete(inProgress.id)}
+                className="bg-green-400 hover:bg-green-300 text-white px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-xl transition-all active:scale-95"
               >
-                Call Next Patient
+                ✓ Done — Complete
               </button>
-            )}
+              {pendingPatients.length > 0 && (
+                <button
+                  onClick={handleAutoNext}
+                  className="bg-white text-brand-blue px-6 py-3 rounded-lg font-bold shadow-md hover:shadow-xl transition-all active:scale-95"
+                >
+                  Call Next Patient
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -204,8 +223,14 @@ export default function DoctorDashboard() {
                           Call This Patient
                         </button>
                       )}
+                      {/* Fix: Complete button instead of dead 'In Consultation' text */}
                       {apt.status === 'IN_PROGRESS' && (
-                        <span className="text-gray-400 cursor-not-allowed">In Consultation</span>
+                        <button
+                          onClick={() => handleComplete(apt.id)}
+                          className="bg-green-500 hover:bg-green-600 text-white px-4 py-1.5 rounded-lg font-medium text-xs transition-colors"
+                        >
+                          ✓ Complete
+                        </button>
                       )}
                     </td>
                   </tr>

@@ -11,9 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-
 import java.util.List;
-
 
 @Configuration
 public class DataInitializer {
@@ -26,6 +24,7 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner seedUsers(UserRepository userRepository, DoctorRepository doctorRepository, PasswordEncoder passwordEncoder) {
         return args -> {
+    
             // Seed doctor accounts from the doctor table
             if (userRepository.findByUsername("doctor.anil.fernando").isEmpty()) {
                 List<Doctor> doctors = doctorRepository.findAll();

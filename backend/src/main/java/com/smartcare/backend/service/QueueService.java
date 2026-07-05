@@ -26,8 +26,9 @@ public class QueueService {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        Integer currentCount = appointmentRepository.countByDoctorAndDate(doctor, date);
-        Integer nextQueueNumber = currentCount + 1;
+        // Fix: countByDoctorAndDate returns Long — cast correctly to avoid type mismatch
+        Long currentCount = appointmentRepository.countByDoctorAndDate(doctor, date);
+        Integer nextQueueNumber = currentCount.intValue() + 1;
 
         Appointment appointment = new Appointment();
         appointment.setDoctor(doctor);
@@ -57,7 +58,9 @@ public class QueueService {
 
         Doctor doctor = targetAppointment.getDoctor();
 
-        Optional<Appointment> currentInProgress = appointmentRepository.findFirstByDoctorAndStatus(doctor, AppointmentStatus.IN_PROGRESS);
+        // Fix: use ordered query; guard against re-starting the same patient
+        Optional<Appointment> currentInProgress = appointmentRepository
+                .findFirstByDoctorAndStatusOrderByQueueNumberAsc(doctor, AppointmentStatus.IN_PROGRESS);
         if (currentInProgress.isPresent() && !currentInProgress.get().getId().equals(appointmentId)) {
             Appointment current = currentInProgress.get();
             current.setStatus(AppointmentStatus.COMPLETED);
@@ -68,12 +71,28 @@ public class QueueService {
         return appointmentRepository.save(targetAppointment);
     }
 
+    // Fix: explicit completeAppointment — allows finishing the last patient in the queue
+    @Transactional
+    public Appointment completeAppointment(Long appointmentId) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+        if (appointment.getStatus() != AppointmentStatus.IN_PROGRESS) {
+            throw new RuntimeException("Only IN_PROGRESS appointments can be completed");
+        }
+
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        return appointmentRepository.save(appointment);
+    }
+
     @Transactional
     public synchronized Appointment callNextPatient(Long doctorId) {
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
 
-        Optional<Appointment> currentInProgress = appointmentRepository.findFirstByDoctorAndStatus(doctor, AppointmentStatus.IN_PROGRESS);
+        // Fix: use ordered query for deterministic auto-complete
+        Optional<Appointment> currentInProgress = appointmentRepository
+                .findFirstByDoctorAndStatusOrderByQueueNumberAsc(doctor, AppointmentStatus.IN_PROGRESS);
         currentInProgress.ifPresent(current -> {
             current.setStatus(AppointmentStatus.COMPLETED);
             appointmentRepository.save(current);

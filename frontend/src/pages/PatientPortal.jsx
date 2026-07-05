@@ -11,6 +11,9 @@ export default function PatientPortal() {
   const [liveQueue, setLiveQueue] = useState(null);
   const [showQueue, setShowQueue] = useState(false);
 
+  // Fix: remember which doctor was booked so queue check works without re-selecting
+  const [bookedDoctorId, setBookedDoctorId] = useState(null);
+
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const fileInputRef = useRef(null);
 
@@ -45,6 +48,9 @@ export default function PatientPortal() {
         date: date
       });
       alert(`Appointment Booked! Your Queue Number is ${res.data.queueNumber}`);
+      // Fix: save bookedDoctorId so pollQueue works even after the dropdown resets
+      setBookedDoctorId(selectedDoctor);
+      setSelectedDoctor('');
     } catch (error) {
       console.error("Booking error", error);
       alert("Failed to book appointment");
@@ -52,9 +58,11 @@ export default function PatientPortal() {
   };
 
   const pollQueue = async () => {
-    if (!selectedDoctor) return alert("Please select a doctor from the booking form to see their live queue.");
+    // Fix: fall back to bookedDoctorId if nothing is currently selected
+    const doctorIdToUse = selectedDoctor || bookedDoctorId;
+    if (!doctorIdToUse) return alert("Please select a doctor from the booking form to see their live queue.");
     try {
-      const res = await api.get('/queue', { params: { doctorId: selectedDoctor, date: date || undefined } });
+      const res = await api.get('/queue', { params: { doctorId: doctorIdToUse, date: date || undefined } });
       setLiveQueue(res.data);
       setShowQueue(true);
     } catch (error) {
@@ -64,12 +72,12 @@ export default function PatientPortal() {
 
   // Auto-refresh the live queue every 5s while it's open
   useEffect(() => {
-    if (!showQueue || !selectedDoctor) return;
+    if (!showQueue || !(selectedDoctor || bookedDoctorId)) return;
     const interval = setInterval(() => {
       pollQueue();
     }, 5000);
     return () => clearInterval(interval);
-  }, [showQueue, selectedDoctor, date]);
+  }, [showQueue, selectedDoctor, bookedDoctorId, date]);
 
   const handleFileSelect = (e) => {
     const files = Array.from(e.target.files);
@@ -277,28 +285,80 @@ export default function PatientPortal() {
         {showQueue && (
           <section className="mt-10 bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
             <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-bold text-gray-900">Live Queue Tracking</h3>
+              <div className="flex items-center gap-3">
+                <h3 className="text-lg font-bold text-gray-900">Live Queue Tracking</h3>
+                <span className="flex items-center gap-1.5 text-xs text-green-600 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                  Auto-refreshing
+                </span>
+              </div>
               <button onClick={() => setShowQueue(false)} className="text-gray-400 hover:text-gray-600">&times;</button>
             </div>
+
+            {/* Fix: position summary card — shows where the patient is and estimated wait */}
+            {(() => {
+              const myEntry = liveQueue?.find(
+                apt => apt.patientName.trim().toLowerCase() === patientName.trim().toLowerCase()
+                  && apt.status !== 'COMPLETED'
+              );
+              if (!myEntry) return null;
+              const aheadCount = liveQueue.filter(
+                apt => apt.status === 'PENDING' && apt.queueNumber < myEntry.queueNumber
+              ).length;
+              const inProgressExists = liveQueue.some(apt => apt.status === 'IN_PROGRESS');
+              const waitMinutes = (aheadCount + (inProgressExists ? 1 : 0)) * 10;
+              return (
+                <div className={`mx-6 mt-6 p-4 rounded-xl border-2 flex items-center justify-between gap-4 flex-wrap
+                  ${myEntry.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-300' : 'bg-amber-50 border-amber-300'}`}
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-1">Your Status</p>
+                    {myEntry.status === 'IN_PROGRESS' ? (
+                      <p className="text-xl font-bold text-blue-700">🩺 You are with the doctor now!</p>
+                    ) : (
+                      <>
+                        <p className="text-xl font-bold text-amber-800">
+                          You are #{myEntry.queueNumber} — <span className="text-amber-600">{aheadCount} patient{aheadCount !== 1 ? 's' : ''} ahead of you</span>
+                        </p>
+                        <p className="text-sm text-gray-500 mt-0.5">Estimated wait: ~{waitMinutes} min</p>
+                      </>
+                    )}
+                  </div>
+                  <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wide">It's You ✓</span>
+                </div>
+              );
+            })()}
+
             <div className="p-6">
               {liveQueue && liveQueue.length > 0 ? (
                 <div className="space-y-4">
-                  {liveQueue.map((apt) => (
-                    <div key={apt.id} className={`flex items-center justify-between p-4 rounded-lg border ${apt.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200' : apt.status === 'COMPLETED' ? 'bg-gray-50 border-gray-200 opacity-60' : 'border-gray-100'}`}>
-                      <div className="flex items-center gap-4">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${apt.status === 'IN_PROGRESS' ? 'bg-brand-blue text-white shadow-md animate-pulse' : 'bg-gray-200 text-gray-700'}`}>
-                          #{apt.queueNumber}
+                  {liveQueue.map((apt) => {
+                    // Fix: case-insensitive + trimmed name match
+                    const isMe = apt.patientName.trim().toLowerCase() === patientName.trim().toLowerCase();
+                    return (
+                      <div key={apt.id} className={`flex items-center justify-between p-4 rounded-lg border
+                        ${apt.status === 'IN_PROGRESS' ? 'bg-blue-50 border-blue-200' :
+                          apt.status === 'COMPLETED' ? 'bg-gray-50 border-gray-200 opacity-60' :
+                          isMe ? 'bg-amber-50 border-amber-200' : 'border-gray-100'}`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg
+                            ${apt.status === 'IN_PROGRESS' ? 'bg-brand-blue text-white shadow-md animate-pulse' :
+                              isMe ? 'bg-amber-400 text-white' : 'bg-gray-200 text-gray-700'}`}
+                          >
+                            #{apt.queueNumber}
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900">{apt.patientName}</p>
+                            <p className="text-sm text-gray-500">Status: {apt.status.replace('_', ' ')}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900">{apt.patientName}</p>
-                          <p className="text-sm text-gray-500">Status: {apt.status.replace('_', ' ')}</p>
-                        </div>
+                        {isMe && apt.status !== 'COMPLETED' && (
+                          <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">It's You</span>
+                        )}
                       </div>
-                      {apt.patientName === patientName && apt.status !== 'COMPLETED' && (
-                        <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">It's You</span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <p className="text-gray-500 text-center py-8">No patients currently in queue for this date.</p>

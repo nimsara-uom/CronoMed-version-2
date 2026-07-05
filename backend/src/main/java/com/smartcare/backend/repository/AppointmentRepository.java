@@ -12,10 +12,12 @@ import java.util.Optional;
 
 @Repository
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
-    Integer countByDoctorAndDate(Doctor doctor, LocalDate date);
+    // Fix: return Long (not Integer) to match JPA's count() return type
+    Long countByDoctorAndDate(Doctor doctor, LocalDate date);
     List<Appointment> findByDoctorOrderByQueueNumberAsc(Doctor doctor);
     List<Appointment> findByDoctorAndDateOrderByQueueNumberAsc(Doctor doctor, LocalDate date);
-    Optional<Appointment> findFirstByDoctorAndStatus(Doctor doctor, AppointmentStatus status);
+    // Fix: add OrderByQueueNumberAsc for deterministic ordering
+    Optional<Appointment> findFirstByDoctorAndStatusOrderByQueueNumberAsc(Doctor doctor, AppointmentStatus status);
     Optional<Appointment> findFirstByDoctorAndDateAndStatusOrderByQueueNumberAsc(Doctor doctor, LocalDate date, AppointmentStatus status);
     List<Appointment> findByPatientNameOrderByDateDescQueueNumberAsc(String patientName);
 }

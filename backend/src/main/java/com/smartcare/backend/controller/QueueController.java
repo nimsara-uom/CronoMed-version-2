@@ -52,6 +52,13 @@ public class QueueController {
         return queueService.startAppointment(id);
     }
 
+    // Fix: explicit complete endpoint so the last patient can be finished
+    @PreAuthorize("hasRole('DOCTOR')")
+    @PutMapping("/complete/{id}")
+    public Appointment completeAppointment(@PathVariable Long id) {
+        return queueService.completeAppointment(id);
+    }
+
     @PreAuthorize("hasRole('DOCTOR')")
     @PutMapping("/next")
     public Appointment callNext(@RequestParam Long doctorId) {
