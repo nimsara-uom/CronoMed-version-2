@@ -1,5 +1,7 @@
 package com.smartcare.backend.security;
 
+
+
 import com.smartcare.backend.model.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -10,8 +12,12 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+
+
+
 import java.security.Key;
 import java.util.Date;
+
 
 @Component
 public class JwtTokenProvider {
@@ -19,11 +25,16 @@ public class JwtTokenProvider {
     @Value("${app.jwt.secret}")
     private String secret;
 
+    // Inject the secret key and expiration time
     @Value("${app.jwt.expiration}")
     private long validityInMs;
 
+    
     private Key key;
 
+
+    
+    // Initializes the cryptographic key
     @PostConstruct
     protected void init() {
         // #2 — Fail fast: if JWT_SECRET is absent or too short for HS256 (< 256 bits / 32 bytes),
@@ -65,6 +76,8 @@ public class JwtTokenProvider {
         }
     }
 
+
+    
     public String getUsername(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody().getSubject();
     }
