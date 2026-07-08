@@ -3,4 +3,8 @@ backend/target/
 backend/.gradle/
 .agents/
 skills-lock.json
-skills-lock.json
+
+# Secret environment files — never commit these
+.env
+backend/.env
+frontend/.env
