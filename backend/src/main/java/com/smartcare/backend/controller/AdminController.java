@@ -6,6 +6,7 @@ import com.smartcare.backend.model.Appointment;
 import com.smartcare.backend.model.AppointmentStatus;
 import com.smartcare.backend.model.Doctor;
 import com.smartcare.backend.repository.DoctorRepository;
+import com.smartcare.backend.repository.AppointmentRepository;
 import com.smartcare.backend.service.QueueService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,12 +29,15 @@ public class AdminController {
     @Autowired
     private QueueService queueService;
 
+    @Autowired
+    private AppointmentRepository appointmentRepository;
+
     /**
-     * Returns a live snapshot of every doctor's queue for today:
-     * - How many patients are waiting (PENDING)
-     * - Who is currently in consultation (IN_PROGRESS)
-     * - How long that consultation has been running (seconds since startedAt)
-     * - The doctor's average consultation time baseline
+     * Returns a live snapshot of every doctor's queue:
+     * - waiting = PENDING count for TODAY
+     * - currentPatient = any IN_PROGRESS appointment across ALL dates
+     *   (a doctor may still be with a patient booked on a previous day)
+     * - elapsedSeconds = seconds since startedAt
      */
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/overview")
@@ -42,15 +46,16 @@ public class AdminController {
         LocalDate today = LocalDate.now();
 
         return doctors.stream().map(doctor -> {
-            List<Appointment> queue = queueService.getQueueForDoctor(doctor.getId(), today);
-
-            int waiting = (int) queue.stream()
+            // PENDING count: only today's queue
+            List<Appointment> todayQueue = queueService.getQueueForDoctor(doctor.getId(), today);
+            int waiting = (int) todayQueue.stream()
                     .filter(a -> a.getStatus() == AppointmentStatus.PENDING)
                     .count();
 
-            Appointment inProgress = queue.stream()
-                    .filter(a -> a.getStatus() == AppointmentStatus.IN_PROGRESS)
-                    .findFirst()
+            // IN_PROGRESS: across ALL dates — a doctor may still be consulting
+            // a patient whose appointment was booked on a previous day
+            Appointment inProgress = appointmentRepository
+                    .findFirstByDoctorAndStatusOrderByQueueNumberAsc(doctor, AppointmentStatus.IN_PROGRESS)
                     .orElse(null);
 
             String currentPatientName = inProgress != null ? inProgress.getPatientName() : null;
