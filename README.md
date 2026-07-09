@@ -80,20 +80,40 @@ The system focuses on **performance, security, concurrency, and user experience*
 ### Login & Authentication
 
 <p align="center">
-<img src="./assets/login.png" width="750"/>
+<img width="2560" height="1600" alt="WhatsApp Image 2026-07-09 at 23 05 41 (1)" src="https://github.com/user-attachments/assets/501755fa-9870-4f61-b76a-893d86cf24f1" />
 </p>
 
 Secure role-based authentication for Patients and Doctors using JWT.
 
 ---
 
+### Patient Portal
+
+<p align="center">
+<img width="2560" height="1600" alt="WhatsApp Image 2026-07-09 at 23 05 41 (5)" src="https://github.com/user-attachments/assets/5e938734-034e-4d7d-b175-8571d6207923" />
+</p>
+
+Patients can appoint a channeling, they can track the queue in real time.
+
+---
+
 ### Doctor Dashboard
 
 <p align="center">
-<img src="./assets/dashboard.png" width="750"/>
+<img width="1600" height="1000" alt="WhatsApp Image 2026-07-09 at 23 05 41 (7)" src="https://github.com/user-attachments/assets/3dcabe13-a5f6-4802-b80c-33c86db96022" />
 </p>
 
 Doctors can monitor queues, call the next patient, and manage consultations in real time.
+
+---
+
+### Admin(Hospital) Dashboard
+
+<p align="center">
+<img width="1600" height="1000" alt="WhatsApp Image 2026-07-09 at 23 05 41 (6)" src="https://github.com/user-attachments/assets/7d589440-159c-469e-90f3-ac7aa3b53136" />
+</p>
+
+Hospital can and manage consultations in real time. can see the Queue and available Doc at a particular moment.
 
 ---
 
@@ -138,7 +158,6 @@ Stay tuned—more exciting features are on the way!
 ## 👨‍💻 Team MultiThreaders
 
 - Nimsara Kodithuwakku
-<img width="1920" height="1080" alt="hero-medical" src="https://github.com/user-attachments/assets/a13a49f9-ac68-450f-bb9a-9f6c72dc6ea6" />
 - Yasandu Kethmika
 - Kenul Perera
 - Risandu Dissanayake
