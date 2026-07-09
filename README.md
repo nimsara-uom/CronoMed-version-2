@@ -2,7 +2,7 @@
 
 Hospital queue management system. Patients book appointments, doctors manage the live queue.
 
-**Stack:** React + Vite (frontend) · Spring Boot 3 + PostgreSQL/Supabase (backend) · JWT auth
+**Stack:** React + Vite (frontend) · Spring Boot 3 + PostgreSQL/Supabase (backend) · JWT aut
 
 ---
 
