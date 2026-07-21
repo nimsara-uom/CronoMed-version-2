@@ -41,6 +41,7 @@ The system focuses on **performance, security, concurrency, and user experience*
 - Start Consultation
 - Complete Consultation
 - Queue Statistics
+- Queue Statistic
 
 ### ⚡ Queue Management
 - Concurrent-safe appointment booking
